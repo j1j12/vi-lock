@@ -1,0 +1,17 @@
+cmake_minimum_required(VERSION 3.10)
+project(access_event_outbox CXX)
+set(CMAKE_CXX_STANDARD 11)
+find_package(Qt5 5.12 REQUIRED COMPONENTS Core Sql)
+if(NOT TARGET Qt5::Core OR NOT TARGET Qt5::Sql)
+    message(FATAL_ERROR "Qt imported targets missing. Use build_outbox.sh with the SDK host Qt tools (OE_QMAKE_PATH_EXTERNAL_HOST_BINS); inspect earlier Qt diagnostics.")
+endif()
+add_library(access_event_outbox STATIC store.cpp)
+target_link_libraries(access_event_outbox PUBLIC Qt5::Core Qt5::Sql)
+add_executable(test_outbox test_outbox.cpp store.cpp)
+target_compile_definitions(test_outbox PRIVATE OUTBOX_TEST_FAULTS)
+target_link_libraries(test_outbox Qt5::Core Qt5::Sql)
+add_executable(test_event_db ../../linux/qt_gui/tests/event_db_test.cpp
+    ../../linux/qt_gui/event_journal.cpp ../../linux/qt_gui/event_journal_db.cpp
+    ../../linux/qt_gui/event_journal.h store.cpp)
+set_target_properties(test_event_db PROPERTIES AUTOMOC ON)
+target_link_libraries(test_event_db Qt5::Core Qt5::Sql)

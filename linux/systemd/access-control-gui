@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+export QT_QPA_PLATFORM=linuxfb
+unset QT_QPA_FB_DRM
+exec /home/root/access_control_gui_recognition

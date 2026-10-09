@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.10)
+project(access_probe_sender CXX)
+set(CMAKE_CXX_STANDARD 11)
+find_package(Qt5 5.12 REQUIRED COMPONENTS Core)
+add_executable(access_probe_sender main.cpp)
+target_link_libraries(access_probe_sender Qt5::Core)

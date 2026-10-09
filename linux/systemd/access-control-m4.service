@@ -1,0 +1,16 @@
+[Unit]
+Description=Access control v9 shutdown ACK RPMsg firmware (no servo)
+After=local-fs.target systemd-modules-load.service
+Before=access-control-gui.service
+RequiresMountsFor=/lib/firmware /home/root
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/access-control-m4 start
+ExecStop=/usr/local/sbin/access-control-m4 stop
+TimeoutStartSec=30
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

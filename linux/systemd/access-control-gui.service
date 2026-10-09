@@ -1,0 +1,17 @@
+[Unit]
+Description=Access control recognition display only (no authorization)
+Requires=access-control-m4.service
+After=access-control-m4.service
+PartOf=access-control-m4.service
+RequiresMountsFor=/home/root
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/access-control-gui
+WorkingDirectory=/home/root
+KillMode=control-group
+TimeoutStopSec=40
+Restart=no
+
+[Install]
+WantedBy=multi-user.target

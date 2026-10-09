@@ -1,0 +1,19 @@
+[Unit]
+Description=Synthetic event single-send worker (no door control)
+After=network.target
+ConditionPathExists=!/home/root/access-control-event-test/automatic.paused
+StartLimitIntervalSec=120
+# A 30-second timer must permit at least 4 starts per 120 seconds.
+# Keep headroom for an immediate first trigger and manual diagnostics.
+StartLimitBurst=10
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh /usr/local/sbin/access-event-test-worker
+TimeoutStartSec=20
+TimeoutStopSec=5
+KillMode=control-group
+UMask=0077
+Nice=10
+NoNewPrivileges=yes
+PrivateTmp=yes

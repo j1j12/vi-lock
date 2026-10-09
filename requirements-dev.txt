@@ -1,0 +1,3 @@
+# Test and credential-generation dependency; use an isolated environment.
+# Version verified in the local 17-test receiver regression.
+cryptography==50.0.2

@@ -1,0 +1,53 @@
+#!/bin/sh
+set -eu
+R=/sys/class/remoteproc/remoteproc0
+FW=m4_fw_CM4_shutdown_ack_v9.elf
+fail() { echo "access-control-m4: $*" >&2; exit 1; }
+check_readers() {
+    # Driver remove currently frees per-device data; refuse manual live readers.
+    for fd in /proc/[0-9]*/fd/*; do
+        target=$(readlink "$fd" 2>/dev/null || true)
+        case "$target" in
+            /dev/access_control|'/dev/access_control (deleted)')
+                fail "device open at $fd; stop its owner before stopping M4" ;;
+        esac
+    done
+}
+case "${1:-}" in
+start)
+    [ -d "$R" ] || fail 'remoteproc0 missing'
+    if ! grep -q '^access_control ' /proc/modules; then
+        [ -f /home/root/access_control.ko ] || fail 'access_control.ko missing'
+    fi
+    printf '%s  %s\n' '7aea5de60b8e162e227756dbd65f82a37686329b628af1a873f2b94ffce2c241' \
+        "/lib/firmware/$FW" | sha256sum -c - || fail 'firmware checksum mismatch'
+    check_readers
+    state=$(cat "$R/state")
+    case "$state" in
+        running) [ "$(cat "$R/firmware")" = "$FW" ] || fail 'different firmware running; stop it manually first' ;;
+        offline) echo "$FW" > "$R/firmware"; echo start > "$R/state" ;;
+        *) fail "unexpected state $state" ;;
+    esac
+    if ! grep -q '^access_control ' /proc/modules; then
+        insmod /home/root/access_control.ko
+    fi
+    i=0
+    while [ "$i" -lt 10 ]; do
+        [ -c /dev/access_control ] && exit 0
+        sleep 1
+        i=$((i+1))
+    done
+    fail 'RPMsg device did not appear; inspect trace/dmesg; no automatic restart'
+    ;;
+stop)
+    [ -d "$R" ] || exit 0
+    state=$(cat "$R/state")
+    [ "$state" = offline ] && exit 0
+    [ "$state" = running ] || fail "unexpected state $state"
+    [ "$(cat "$R/firmware")" = "$FW" ] || fail 'refusing to stop another firmware'
+    check_readers
+    echo stop > "$R/state"
+    [ "$(cat "$R/state")" = offline ] || fail 'M4 did not reach offline'
+    ;;
+*) fail 'usage: access-control-m4 start|stop' ;;
+esac

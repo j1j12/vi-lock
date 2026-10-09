@@ -1,0 +1,7 @@
+#!/bin/sh
+set -eu
+export QT_QPA_PLATFORM=linuxfb
+unset QT_QPA_FB_DRM
+export ACCESS_CONTROL_SERVO_MANUAL=1
+export ACCESS_CONTROL_ONESHOT=1
+exec /home/root/access_control_gui_admin_v15

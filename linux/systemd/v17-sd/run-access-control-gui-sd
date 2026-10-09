@@ -1,0 +1,35 @@
+#!/bin/sh
+set -eu
+# Reuse BSP automount; never mount/remount or fall back to eMMC.
+fail() { echo "SD GUI STOP: $*" >&2; exit 1; }
+expected=$(cat /etc/access-control-sd.sha256)
+attempt=0
+binary=
+while [ "$attempt" -lt 30 ]; do
+    device=$(readlink -f /dev/disk/by-uuid/1234-5678 2>/dev/null || true)
+    if [ -b "$device" ]; then
+        name=${device##*/}
+        target=/run/media/$name
+        source=$(findmnt -rn -M "$target" -o SOURCE 2>/dev/null || true)
+        if [ "$source" = "$device" ]; then
+            candidate=$target/v17-upload/access_control_gui_preview_v17
+            if [ -f "$candidate" ] && [ ! -L "$candidate" ]; then
+                binary=$candidate
+                break
+            fi
+        fi
+    fi
+    attempt=$((attempt + 1))
+    sleep 1
+done
+[ -n "$binary" ] || fail 'SD mount/program unavailable after 30 seconds'
+[ -x "$binary" ] || fail 'Program not executable; inspect mount options'
+actual=$(sha256sum "$binary" | awk '{print $1}')
+[ "$actual" = "$expected" ] || fail 'Program differs from approved v17; no fallback'
+export QT_QPA_PLATFORM=linuxfb
+unset QT_QPA_FB_DRM
+export ACCESS_CONTROL_SERVO_MANUAL=1
+export ACCESS_CONTROL_ONESHOT=1
+cd /home/root
+echo "SD GUI: executing $binary"
+exec "$binary"

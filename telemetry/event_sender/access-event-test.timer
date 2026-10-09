@@ -1,0 +1,11 @@
+[Unit]
+Description=Retry synthetic event queue every 30 seconds
+
+[Timer]
+OnBootSec=30s
+OnUnitInactiveSec=30s
+AccuracySec=1s
+Unit=access-event-test.service
+
+[Install]
+WantedBy=timers.target
